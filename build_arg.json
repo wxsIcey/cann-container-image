@@ -1,7 +1,11 @@
 {
-    "versions": [
+    "manylinux": [
         {
-            "path": "manylinux/8.1.rc1-910b-manylinux_2_28-py3.9",
+            "cann_version": "8.1.RC1",
+            "cann_chip": "910b",
+            "os_name": "manylinux",
+            "os_version": "2_28",
+            "py_version": "3.9",
             "tags": [
                 "8.1.rc1-910b-manylinux_2_28-py3.9"
             ]
