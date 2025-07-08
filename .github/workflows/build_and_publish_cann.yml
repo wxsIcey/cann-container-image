@@ -85,20 +85,6 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_TOKEN }}
 
-      - name: Login to AscendHub
-        uses: docker/login-action@v3
-        with:
-          registry: swr.cn-north-4.myhuaweicloud.com
-          username: ${{ secrets.ASCENDHUB_USERNAME }}
-          password: ${{ secrets.ASCENDHUB_TOKEN }}
-      
-      - name: Login to Huawei Cloud SWR
-        uses: docker/login-action@v3
-        with:
-          registry: swr.cn-southwest-2.myhuaweicloud.com
-          username: ${{ secrets.HW_USERNAME }}
-          password: ${{ secrets.HW_TOKEN }}
-
       - name: Build and push by digest
         uses: docker/build-push-action@v6
         id: build
@@ -107,8 +93,6 @@ jobs:
           tags: |
             docker.io/wxsicey/cann
             quay.io/wxsicey/cann
-            swr.cn-north-4.myhuaweicloud.com/wxs_test/cann
-            swr.cn-southwest-2.myhuaweicloud.com/base_image/ascend-ci/cann
           file: ${{ github.workspace }}/cann/${{ inputs.cann_tag }}/Dockerfile
           context: ${{ github.workspace }}/cann/${{ inputs.cann_tag }}
           outputs: type=image,push-by-digest=true,name-canonical=true,push=true
@@ -156,40 +140,32 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_TOKEN }}
 
-      - name: Login to AscendHub
-        uses: docker/login-action@v3
-        with:
-          registry: swr.cn-north-4.myhuaweicloud.com
-          username: ${{ secrets.ASCENDHUB_USERNAME }}
-          password: ${{ secrets.ASCENDHUB_TOKEN }}
-      
-      - name: Login to Huawei Cloud SWR
-        uses: docker/login-action@v3
-        with:
-          registry: swr.cn-southwest-2.myhuaweicloud.com
-          username: ${{ secrets.HW_USERNAME }}
-          password: ${{ secrets.HW_TOKEN }}
-
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
       - name: Prepare tags
         id: prepare-tags
         run: |
-          TAGS=$(jq -r --arg cann_tag "${{ inputs.cann_tag }}" \
-                '.versions[] | select(.path == "cann/" + $cann_tag) | .tags | join(",")' \
-                publish_version.json)
-          FIRST_TAG=$(echo "$TAGS" | cut -d',' -f1)
-          
+          BASE_TAGS=$(jq -r --arg cann_tag "${{ inputs.cann_tag }}" \
+            '.versions[] | select(.path == "cann/" + $cann_tag) | .tags[]' \
+            cann_publish_version.json)
+          registries=(
+            "docker.io/wxsicey/cann"
+            "quay.io/wxsicey/cann"
+          )
+          first=true
           TAGS_JSON="["
-            for registry in "docker.io/wxsicey/cann" "quay.io/wxsicey/cann"; do
-              for tag in $(echo "$TAGS" | tr ',' ' '); do
-                TAGS_JSON+="\"$registry:$tag\","
-              done
+          for registry in "${registries[@]}"; do
+            for tag in $(echo "$BASE_TAGS" | tr ',' ' '); do
+              if [ "$first" != true ]; then
+                TAGS_JSON+=","
+              fi
+              TAGS_JSON+="\"${registry}:${tag}\""
+              first=false
             done
-            TAGS_JSON+="\"swr.cn-north-4.myhuaweicloud.com/wxs_test/cann:$FIRST_TAG\","
-            TAGS_JSON+="\"swr.cn-southwest-2.myhuaweicloud.com/base_image/ascend-ci/cann:$FIRST_TAG\"]"
-          echo "tags=$TAGS_JSON" >> $GITHUB_OUTPUT
+          done
+          TAGS_JSON+="]"
+          echo "tags=${TAGS_JSON}" >> $GITHUB_OUTPUT
 
       - name: Create manifest list and push
         working-directory: ${{ runner.temp }}/digests
@@ -205,15 +181,46 @@ jobs:
             elif [[ "$TAG" == *"docker.io/wxsicey/cann"* ]]; then
               docker buildx imagetools create -t "$TAG" \
                 $(printf 'docker.io/wxsicey/cann@sha256:%s ' *)
-            elif [[ "$TAG" == *"swr.cn-north-4.myhuaweicloud.com/wxs_test/cann"* ]]; then
-              docker buildx imagetools create -t "$TAG" \
-                $(printf 'swr.cn-north-4.myhuaweicloud.com/wxs_test/cann@sha256:%s ' *)
-            elif [[ "$TAG" == *"swr.cn-southwest-2.myhuaweicloud.com/base_image/ascend-ci/cann"* ]]; then
-              docker buildx imagetools create -t "$TAG" \
-                $(printf 'swr.cn-southwest-2.myhuaweicloud.com/base_image/ascend-ci/cann@sha256:%s ' *)
             else
               echo "Error: Unknown registry in TAG: $TAG"
               exit 1
             fi
           done
+
+  sync-image:
+    runs-on: ubuntu-latest
+    needs: push-image
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install skopeo
+        run: |
+          sudo apt update
+          sudo apt install -y skopeo
+
+      - name: Login to AscendHub
+        run: |
+          echo "${{ secrets.ASCENDHUB_TOKEN }}" | skopeo login \
+            --username "${{ secrets.ASCENDHUB_USERNAME }}" \
+            --password-stdin \
+            swr.cn-north-4.myhuaweicloud.com/wxs_test
+
+      - name: Login to Huawei Cloud SWR
+        run: |
+          echo "${{ secrets.HW_TOKEN }}" | skopeo login \
+            --username "${{ secrets.HW_USERNAME }}" \
+            --password-stdin \
+            swr.cn-southwest-2.myhuaweicloud.com/base_image/ascend-ci
+
+      - name: Sync image
+        run: |
+          skopeo copy --all \
+          docker://quay.io/ascend/cann:${{ inputs.cann_tag }} \
+          swr.cn-north-4.myhuaweicloud.com/wxs_test/cann:${{ inputs.cann_tag }}
+
+          skopeo copy --all \
+          docker://quay.io/ascend/cann:${{ inputs.cann_tag }} \
+          docker://swr.cn-southwest-2.myhuaweicloud.com/base_image/ascend-ci/cann:${{ inputs.cann_tag }}
+
 
