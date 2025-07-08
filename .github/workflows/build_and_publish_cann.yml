@@ -209,7 +209,7 @@ jobs:
       - name: Sync image
         run: |
           skopeo copy --all --dest-compress=false \
-          docker://quay.io/ascend/cann:${{ inputs.cann_tag }} \
+          docker://quay.io/wxsicey/cann:${{ inputs.cann_tag }} \
           docker://swr.cn-north-4.myhuaweicloud.com/wxs_test/cann:${{ inputs.cann_tag }}
 
 
