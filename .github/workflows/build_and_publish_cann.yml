@@ -217,7 +217,7 @@ jobs:
         run: |
           skopeo copy --all \
           docker://quay.io/ascend/cann:${{ inputs.cann_tag }} \
-          swr.cn-north-4.myhuaweicloud.com/wxs_test/cann:${{ inputs.cann_tag }}
+          docker://swr.cn-north-4.myhuaweicloud.com/wxs_test/cann:${{ inputs.cann_tag }}
 
           skopeo copy --all \
           docker://quay.io/ascend/cann:${{ inputs.cann_tag }} \
