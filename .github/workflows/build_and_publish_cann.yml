@@ -206,21 +206,10 @@ jobs:
             --password-stdin \
             swr.cn-north-4.myhuaweicloud.com/wxs_test
 
-      - name: Login to Huawei Cloud SWR
-        run: |
-          echo "${{ secrets.HW_TOKEN }}" | skopeo login \
-            --username "${{ secrets.HW_USERNAME }}" \
-            --password-stdin \
-            swr.cn-southwest-2.myhuaweicloud.com/base_image/ascend-ci
-
       - name: Sync image
         run: |
-          skopeo copy --all \
+          skopeo copy --all --dest-compress=false \
           docker://quay.io/ascend/cann:${{ inputs.cann_tag }} \
           docker://swr.cn-north-4.myhuaweicloud.com/wxs_test/cann:${{ inputs.cann_tag }}
-
-          skopeo copy --all \
-          docker://quay.io/ascend/cann:${{ inputs.cann_tag }} \
-          docker://swr.cn-southwest-2.myhuaweicloud.com/base_image/ascend-ci/cann:${{ inputs.cann_tag }}
 
 
