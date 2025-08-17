@@ -127,7 +127,6 @@ def render_and_save_manylinux_dockerfile(args, manylinux_template):
         print(f"Generated: {output_path}")       
         
 def main():  
-    
     with open('build_manylinux_arg.json', 'r') as fm:
         args = json.load(fm)
     render_and_save_manylinux_dockerfile(args, "manylinux.Dockerfile.j2")
