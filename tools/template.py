@@ -17,6 +17,7 @@ ALPHA_DICT = {
     "8.2.RC1.alpha001": "V100R001C22B800TP013",
     "8.2.RC1.alpha002": "V100R001C22B800TP020",
     "8.2.RC1.alpha003": "V100R001C22B800TP052",
+    "8.2.RC1.alpha004": "V100R001C22B800TP054",
 }
 
 env = Environment(loader=FileSystemLoader('tools/template'))
@@ -105,7 +106,6 @@ def render_and_save_cann_dockerfile(args, ubuntu_template, openeuler_template):
         os.makedirs(os.path.dirname(output_path), exist_ok=True)
         with open(output_path, "w") as f:
             f.write(rendered_content)
-        print(f"Generated: {output_path}")
         
 def render_and_save_manylinux_dockerfile(args, manylinux_template):
     if "manylinux" not in args or not args["manylinux"]:
@@ -123,8 +123,7 @@ def render_and_save_manylinux_dockerfile(args, manylinux_template):
         )
         os.makedirs(os.path.dirname(output_path), exist_ok=True)
         with open(output_path, "w") as f:
-            f.write(rendered_content)
-        print(f"Generated: {output_path}")       
+            f.write(rendered_content)   
         
 def main():  
     with open('build_cann_arg.json', 'r') as f:
