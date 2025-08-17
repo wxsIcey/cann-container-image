@@ -104,28 +104,10 @@ def render_and_save_cann_dockerfile(args, ubuntu_template, openeuler_template):
         with open(output_path, "w") as f:
             f.write(rendered_content)
         
-def render_and_save_manylinux_dockerfile(args, manylinux_template):
-    if "manylinux" not in args or not args["manylinux"]:
-        return
-        
-    for item in args["manylinux"]:
-        template = env.get_template(manylinux_template)
-        
-        rendered_content, cann_chip_type = prepare_common_item_data(item, template)
-
-        output_path = os.path.join(
-            "manylinux",
-            f"{item['cann_version'].lower()}-{cann_chip_type}-{item['os_name']}_{item['os_version']}-py{item['py_version']}",
-            "Dockerfile"
-        )
-        os.makedirs(os.path.dirname(output_path), exist_ok=True)
-        with open(output_path, "w") as f:
-            f.write(rendered_content)   
         
 def main():  
     with open('build_manylinux_arg.json', 'r') as fm:
         args = json.load(fm)
-    render_and_save_manylinux_dockerfile(args, "manylinux.Dockerfile.j2")
     
 
 if __name__ == "__main__":
