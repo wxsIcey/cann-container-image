@@ -127,9 +127,6 @@ def render_and_save_manylinux_dockerfile(args, manylinux_template):
         print(f"Generated: {output_path}")       
         
 def main():  
-    with open('build_cann_arg.json', 'r') as f:
-        args = json.load(f)
-    render_and_save_cann_dockerfile(args, "ubuntu.Dockerfile.j2", "openeuler.Dockerfile.j2")
     
     with open('build_manylinux_arg.json', 'r') as fm:
         args = json.load(fm)
